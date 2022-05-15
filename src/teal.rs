@@ -1,7 +1,6 @@
-use std::fs;
-
 use algonaut::transaction::SignedTransaction;
 use anyhow::{anyhow, Result};
+use std::fs;
 
 const TEAL_PROJECT_PATH: &str = "../teal";
 
@@ -81,7 +80,6 @@ pub fn debug_teal_rendered(txs: &[SignedTransaction], file_name: &str) -> Result
 /// file_name without .teal
 #[allow(dead_code)]
 fn debug_teal_internal(txs: &[SignedTransaction], folder: &str, file_name: &str) -> Result<()> {
-    // tealdbg::launch_default(txs, &in_teal_dir(&format!("{folder}/{file_name}.teal")))
-    //     .map_err(|e| anyhow!(e))
-    Ok(())
+    tealdbg::launch_default(txs, &in_teal_dir(&format!("{folder}/{file_name}.teal")))
+        .map_err(|e| anyhow!(e))
 }
