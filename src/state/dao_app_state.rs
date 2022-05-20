@@ -1,3 +1,8 @@
+use super::app_state::{
+    get_uint_value_or_error, global_state, local_state, local_state_from_account,
+    read_address_from_state, AppStateKey, ApplicationGlobalState, ApplicationLocalStateError,
+    ApplicationStateExt,
+};
 use crate::{
     api::version::{bytes_to_versions, Version, VersionedAddress},
     models::{
@@ -7,13 +12,8 @@ use crate::{
         image_hash::ImageHash,
         share_amount::ShareAmount,
         shares_percentage::SharesPercentage,
+        timestamp::Timestamp,
     },
-};
-
-use super::app_state::{
-    get_uint_value_or_error, global_state, local_state, local_state_from_account,
-    read_address_from_state, AppStateKey, ApplicationGlobalState, ApplicationLocalStateError,
-    ApplicationStateExt,
 };
 use algonaut::{
     algod::v2::Algod,
@@ -52,13 +52,17 @@ const GLOBAL_OWNER: AppStateKey = AppStateKey("Owner");
 
 const GLOBAL_VERSIONS: AppStateKey = AppStateKey("Versions");
 
+const GLOBAL_TARGET: AppStateKey = AppStateKey("Target");
+const GLOBAL_TARGET_END_DATE: AppStateKey = AppStateKey("TargetEndDate");
+const GLOBAL_RAISED: AppStateKey = AppStateKey("Raised");
+
 const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 const LOCAL_DAO: AppStateKey = AppStateKey("Dao");
 
 pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 7; // customer escrow, dao name, dao descr, logo, social media, owner, versions
-pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 7; // total received, shares asset id, funds asset id, share price, investors part, shares locked, shares for investors
+pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 10; // total received, shares asset id, funds asset id, share price, investors part, shares locked, shares for investors, funds target, funds target date, raised
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
 pub const LOCAL_SCHEMA_NUM_INTS: u64 = 4; // for investors: "shares", "claimed total", "claimed init", "dao"
@@ -88,6 +92,10 @@ pub struct CentralAppGlobalState {
     pub owner: Address,
 
     pub locked_shares: ShareAmount,
+
+    pub min_funds_target: FundsAmount,
+    pub min_funds_target_end_date: Timestamp,
+    pub raised: FundsAmount,
 }
 
 /// Returns Ok only if called after dao setup (branch_setup_dao), where all the global state is initialized.
@@ -133,6 +141,10 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     let shares_for_investors = ShareAmount::new(get_int_or_err(&SHARES_FOR_INVESTORS, &gs)?);
 
+    let min_funds_target = FundsAmount::new(get_int_or_err(&GLOBAL_TARGET, &gs)?);
+    let min_funds_target_end_date = Timestamp(get_int_or_err(&GLOBAL_TARGET_END_DATE, &gs)?);
+    let raised = FundsAmount::new(get_int_or_err(&GLOBAL_RAISED, &gs)?);
+
     Ok(CentralAppGlobalState {
         received: total_received,
         customer_escrow: VersionedAddress::new(customer_escrow, versions.customer_escrow),
@@ -149,6 +161,9 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         owner,
         locked_shares: shares_locked,
         shares_for_investors,
+        min_funds_target,
+        min_funds_target_end_date,
+        raised,
     })
 }
 
