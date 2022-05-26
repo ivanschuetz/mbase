@@ -4,15 +4,15 @@ use serde::{Deserialize, Serialize};
 /// Assumes string to be base64 encoded hash bytes
 /// we might change this in the future to store and handle directly the hash bytes (similar to Algonaut's HashDigest struct)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ImageHash(pub String);
+pub struct GlobalStateHash(pub String);
 
-impl ImageHash {
+impl GlobalStateHash {
     pub fn bytes(&self) -> Vec<u8> {
         self.0.as_bytes().to_vec()
     }
 
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<ImageHash> {
-        Ok(ImageHash(String::from_utf8(bytes)?))
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<GlobalStateHash> {
+        Ok(GlobalStateHash(String::from_utf8(bytes)?))
     }
 
     pub fn as_str(&self) -> String {

@@ -9,7 +9,7 @@ use crate::{
         dao_app_id::DaoAppId,
         dao_id::DaoId,
         funds::{FundsAmount, FundsAssetId},
-        image_hash::ImageHash,
+        hash::GlobalStateHash,
         share_amount::ShareAmount,
         shares_percentage::SharesPercentage,
         timestamp::Timestamp,
@@ -81,12 +81,12 @@ pub struct CentralAppGlobalState {
     pub shares_asset_id: u64,
 
     pub project_name: String,
-    pub project_desc: String,
+    pub project_desc: Option<GlobalStateHash>,
     pub share_price: FundsAmount,
     pub investors_share: SharesPercentage,
     pub shares_for_investors: ShareAmount,
 
-    pub image_hash: Option<ImageHash>,
+    pub image_hash: Option<GlobalStateHash>,
     pub social_media_url: String,
 
     pub owner: Address,
@@ -120,13 +120,16 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let shares_asset_id = get_int_or_err(&GLOBAL_SHARES_ASSET_ID, &gs)?;
 
     let project_name = String::from_utf8(get_bytes_or_err(&GLOBAL_DAO_NAME, &gs)?)?;
-    let project_desc = String::from_utf8(get_bytes_or_err(&GLOBAL_DAO_DESC, &gs)?)?;
+    let project_desc = match gs.find_bytes(&GLOBAL_DAO_DESC) {
+        Some(bytes) => Some(GlobalStateHash::from_bytes(bytes)?),
+        None => None,
+    };
 
     let share_price = FundsAmount::new(get_int_or_err(&GLOBAL_SHARE_PRICE, &gs)?);
     let investors_share = get_int_or_err(&GLOBAL_INVESTORS_SHARE, &gs)?.try_into()?;
 
     let image_hash = match gs.find_bytes(&GLOBAL_LOGO_URL) {
-        Some(bytes) => Some(ImageHash::from_bytes(bytes)?),
+        Some(bytes) => Some(GlobalStateHash::from_bytes(bytes)?),
         None => None,
     };
 
