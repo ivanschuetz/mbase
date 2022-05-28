@@ -1,8 +1,10 @@
+use crate::checked::{CheckedAdd, CheckedSub, CheckedMul, CheckedDiv, CheckedMulOther};
 use crate::util::decimal_util::AsDecimal;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::cmp::PartialOrd;
 use std::fmt::Display;
+use anyhow::{Result, anyhow};
 
 /// An amount of assets (ASA)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
@@ -35,3 +37,34 @@ impl PartialOrd<u64> for AssetAmount {
         self.0.partial_cmp(other)
     }
 }
+
+impl CheckedAdd for AssetAmount {
+    fn add(&self, v: &Self) -> Result<Self> {
+        Ok(AssetAmount(self.0.checked_add(v.0).ok_or(anyhow!("Failed: {self} + {v}".to_owned()))?))
+    }
+}
+
+impl CheckedSub for AssetAmount {
+    fn sub(&self, v: &Self) -> Result<Self> {
+        Ok(AssetAmount(self.0.checked_sub(v.0).ok_or(anyhow!("Failed: {self} - {v}".to_owned()))?))
+    }
+}
+
+impl CheckedMul for AssetAmount {
+    fn mul(&self, v: &Self) -> Result<Self> {
+        Ok(AssetAmount(self.0.checked_mul(v.0).ok_or(anyhow!("Failed: {self} * {v}".to_owned()))?))
+    }
+}
+
+impl CheckedDiv for AssetAmount {
+    fn div(&self, v: &Self) -> Result<Self> {
+        Ok(AssetAmount(self.0.checked_div(v.0).ok_or(anyhow!("Failed: {self} / {v}".to_owned()))?))
+    }
+}
+
+impl CheckedMulOther<u64> for AssetAmount {
+    fn mul(self, rhs: u64) -> Result<Self> {
+        Ok(AssetAmount(self.0.checked_mul(rhs).ok_or(anyhow!("Failed: {self} * {v}".to_owned()))?))
+    }
+}
+

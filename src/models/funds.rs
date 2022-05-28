@@ -1,11 +1,9 @@
 use super::asset_amount::AssetAmount;
-use crate::util::decimal_util::AsDecimal;
+use crate::{util::decimal_util::AsDecimal, checked::{CheckedAdd, CheckedSub, CheckedDiv, CheckedMulOther, CheckedMul}};
+use anyhow::Result;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use std::{
-    fmt::Display,
-    ops::{Add, Div, Mul, Sub},
-};
+use std::fmt::Display;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FundsAmount(pub AssetAmount);
@@ -34,61 +32,33 @@ impl FundsAmount {
     }
 }
 
-// TODO use only checked operations!
-
-impl Add for FundsAmount {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        FundsAmount::new(self.val() + rhs.val())
+impl CheckedAdd for FundsAmount {
+    fn add(&self, o: &Self) -> Result<Self> {
+        Ok(FundsAmount(self.0.add(&o.0)?))
     }
 }
 
-impl Sub for FundsAmount {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        FundsAmount::new(self.val() - rhs.val())
+impl CheckedSub for FundsAmount {
+    fn sub(&self, o: &Self) -> Result<Self> {
+        Ok(FundsAmount(self.0.sub(&o.0)?))
     }
 }
 
-impl Mul for FundsAmount {
-    type Output = Self;
-    fn mul(self, rhs: Self) -> Self::Output {
-        FundsAmount::new(self.val() * rhs.val())
+impl CheckedMul for FundsAmount {
+    fn mul(&self, o: &Self) -> Result<Self> {
+        Ok(FundsAmount(<AssetAmount as CheckedMul>::mul(&self.0, &o.0)?))
     }
 }
 
-impl Div for FundsAmount {
-    type Output = Self;
-    fn div(self, rhs: Self) -> Self::Output {
-        FundsAmount::new(self.val() / rhs.val())
+impl CheckedDiv for FundsAmount {
+    fn div(&self, o: &Self) -> Result<Self> {
+        Ok(FundsAmount(self.0.div(&o.0)?))
     }
 }
 
-impl Add<u64> for FundsAmount {
-    type Output = Self;
-    fn add(self, rhs: u64) -> Self::Output {
-        FundsAmount::new(self.val() + rhs)
-    }
-}
-
-impl Sub<u64> for FundsAmount {
-    type Output = Self;
-    fn sub(self, rhs: u64) -> Self::Output {
-        FundsAmount::new(self.val() - rhs)
-    }
-}
-
-impl Mul<u64> for FundsAmount {
-    type Output = Self;
-    fn mul(self, rhs: u64) -> Self::Output {
-        FundsAmount::new(self.val() * rhs)
-    }
-}
-
-impl Div<u64> for FundsAmount {
-    type Output = Self;
-    fn div(self, rhs: u64) -> Self::Output {
-        FundsAmount::new(self.val() / rhs)
+impl CheckedMulOther<u64> for FundsAmount {
+    fn mul(self, rhs: u64) -> Result<Self> {
+        Ok(FundsAmount(self.0.mul(rhs)?))
     }
 }
 
