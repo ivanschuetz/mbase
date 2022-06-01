@@ -2,7 +2,7 @@ use algonaut::transaction::SignedTransaction;
 use anyhow::{anyhow, Result};
 use std::fs;
 
-const TEAL_PROJECT_PATH: &str = "../../teal";
+const TEAL_PROJECT_PATH: &str = "../teal";
 
 // not rendered teal template (with placeholders)
 #[derive(Debug, Clone, PartialEq, Eq)]
