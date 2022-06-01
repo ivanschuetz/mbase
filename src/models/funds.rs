@@ -1,5 +1,8 @@
 use super::asset_amount::AssetAmount;
-use crate::{util::decimal_util::AsDecimal, checked::{CheckedAdd, CheckedSub, CheckedDiv, CheckedMulOther, CheckedMul}};
+use crate::{
+    checked::{CheckedAdd, CheckedDiv, CheckedMul, CheckedMulOther, CheckedSub},
+    util::decimal_util::AsDecimal,
+};
 use anyhow::Result;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -46,7 +49,9 @@ impl CheckedSub for FundsAmount {
 
 impl CheckedMul for FundsAmount {
     fn mul(&self, o: &Self) -> Result<Self> {
-        Ok(FundsAmount(<AssetAmount as CheckedMul>::mul(&self.0, &o.0)?))
+        Ok(FundsAmount(<AssetAmount as CheckedMul>::mul(
+            &self.0, &o.0,
+        )?))
     }
 }
 

@@ -1,11 +1,11 @@
 use crate::checked::{CheckedAdd, CheckedMulOther, CheckedSub};
 
 use super::asset_amount::AssetAmount;
+use anyhow::Result;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt::Display;
-use anyhow::Result;
 
 /// An amount of shares (DAO ASA)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

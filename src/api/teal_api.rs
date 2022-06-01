@@ -1,16 +1,19 @@
 use super::contract::Contract;
-use anyhow::{anyhow, Result};
 use crate::{
     api::version::{Version, VersionedTealSourceTemplate, Versions},
     teal::load_teal_template,
 };
+use anyhow::{anyhow, Result};
 
 // Send + sync assumess the implementations to be stateless
 // (also: we currently use this only in WASM, which is single threaded)
 pub trait TealApi: Send + Sync {
     fn last_versions(&self) -> Versions;
-    fn template(&self, contract: Contract, version: Version)
-        -> Result<VersionedTealSourceTemplate>;
+    fn template(
+        &self,
+        contract: Contract,
+        version: Version,
+    ) -> Result<Option<VersionedTealSourceTemplate>>;
 }
 
 pub struct LocalTealApi {}
@@ -28,7 +31,7 @@ impl TealApi for LocalTealApi {
         &self,
         contract: Contract,
         version: Version,
-    ) -> Result<VersionedTealSourceTemplate> {
+    ) -> Result<Option<VersionedTealSourceTemplate>> {
         match contract {
             Contract::DaoCustomer => dao_customer_teal(version),
             Contract::DaoAppApproval => dao_app_approval_teal(version),
@@ -37,25 +40,25 @@ impl TealApi for LocalTealApi {
     }
 }
 
-fn dao_customer_teal(version: Version) -> Result<VersionedTealSourceTemplate> {
-    match version.0 {
-        1 => load_versioned_teal_template(version, "customer_escrow"),
-        _ => not_found_err("dao customer", version),
-    }
+fn dao_customer_teal(version: Version) -> Result<Option<VersionedTealSourceTemplate>> {
+    Ok(match version.0 {
+        1 => Some(load_versioned_teal_template(version, "customer_escrow")?),
+        _ => None,
+    })
 }
 
-fn dao_app_approval_teal(version: Version) -> Result<VersionedTealSourceTemplate> {
-    match version.0 {
-        1 => load_versioned_teal_template(version, "dao_app_approval"),
-        _ => not_found_err("dao app", version),
-    }
+fn dao_app_approval_teal(version: Version) -> Result<Option<VersionedTealSourceTemplate>> {
+    Ok(match version.0 {
+        1 => Some(load_versioned_teal_template(version, "dao_app_approval")?),
+        _ => None,
+    })
 }
 
-fn dao_app_clear_teal(version: Version) -> Result<VersionedTealSourceTemplate> {
-    match version.0 {
-        1 => load_versioned_teal_template(version, "dao_app_clear"),
-        _ => not_found_err("dao app", version),
-    }
+fn dao_app_clear_teal(version: Version) -> Result<Option<VersionedTealSourceTemplate>> {
+    Ok(match version.0 {
+        1 => Some(load_versioned_teal_template(version, "dao_app_clear")?),
+        _ => None,
+    })
 }
 
 fn load_versioned_teal_template(
