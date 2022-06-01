@@ -33,8 +33,6 @@ impl TealApi for LocalTealApi {
             Contract::DaoCustomer => dao_customer_teal(version),
             Contract::DaoAppApproval => dao_app_approval_teal(version),
             Contract::DaoAppClear => dao_app_clear_teal(version),
-            Contract::CapiAppApproval => capi_app_approval_teal(version),
-            Contract::CapiAppClear => capi_app_clear_teal(version),
         }
     }
 }
@@ -57,20 +55,6 @@ fn dao_app_clear_teal(version: Version) -> Result<VersionedTealSourceTemplate> {
     match version.0 {
         1 => load_versioned_teal_template(version, "dao_app_clear"),
         _ => not_found_err("dao app", version),
-    }
-}
-
-fn capi_app_approval_teal(version: Version) -> Result<VersionedTealSourceTemplate> {
-    match version.0 {
-        1 => load_versioned_teal_template(version, "capi_app_approval"),
-        _ => not_found_err("capi approval app", version),
-    }
-}
-
-fn capi_app_clear_teal(version: Version) -> Result<VersionedTealSourceTemplate> {
-    match version.0 {
-        1 => load_versioned_teal_template(version, "capi_app_clear"),
-        _ => not_found_err("capi clear app", version),
     }
 }
 
