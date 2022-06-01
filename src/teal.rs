@@ -45,9 +45,8 @@ fn in_teal_dir(subpath: &str) -> String {
 }
 
 fn load_file_bytes(folder: &str, file_name: &str) -> Result<Vec<u8>> {
-    Ok(fs::read(in_teal_dir(&format!(
-        "{folder}/{file_name}.teal"
-    )))?)
+    let path = in_teal_dir(&format!("{folder}/{file_name}.teal"));
+    Ok(fs::read(path)?)
 }
 
 /// IMPORTANT: keys must not be contained in other keys (e.g: "precision" and "precision_square")
