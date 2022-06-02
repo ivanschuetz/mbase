@@ -11,7 +11,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Version(pub u32);
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Versions {
     pub app_approval: Version,
     pub app_clear: Version,
