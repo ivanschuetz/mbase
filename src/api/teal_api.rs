@@ -3,23 +3,12 @@ use crate::{
     api::version::{Version, VersionedTealSourceTemplate, Versions},
     teal::load_teal_template,
 };
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
-// Send + sync assumess the implementations to be stateless
-// (also: we currently use this only in WASM, which is single threaded)
-pub trait TealApi: Send + Sync {
-    fn last_versions(&self) -> Versions;
-    fn template(
-        &self,
-        contract: Contract,
-        version: Version,
-    ) -> Result<Option<VersionedTealSourceTemplate>>;
-}
+pub struct TealFileLoader {}
 
-pub struct LocalTealApi {}
-
-impl TealApi for LocalTealApi {
-    fn last_versions(&self) -> Versions {
+impl TealFileLoader {
+    pub fn last_versions(&self) -> Versions {
         Versions {
             app_approval: Version(1),
             app_clear: Version(1),
@@ -27,7 +16,7 @@ impl TealApi for LocalTealApi {
         }
     }
 
-    fn template(
+    pub fn template(
         &self,
         contract: Contract,
         version: Version,
@@ -69,8 +58,4 @@ fn load_versioned_teal_template(
         version,
         template: load_teal_template(file_name)?,
     })
-}
-
-fn not_found_err<T>(id: &str, version: Version) -> Result<T> {
-    Err(anyhow!("Not found version: {version:?} for: {id}"))
 }
