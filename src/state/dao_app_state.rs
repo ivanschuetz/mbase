@@ -121,7 +121,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     let project_name = String::from_utf8(get_bytes_or_err(&GLOBAL_DAO_NAME, &gs)?)?;
     let project_desc = match gs.find_bytes(&GLOBAL_DAO_DESC) {
-        Some(bytes) => Some(GlobalStateHash::from_bytes(bytes)?),
+        Some(bytes) => bytes_to_hash(bytes)?,
         None => None,
     };
 
@@ -129,7 +129,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let investors_share = get_int_or_err(&GLOBAL_INVESTORS_SHARE, &gs)?.try_into()?;
 
     let image_hash = match gs.find_bytes(&GLOBAL_LOGO_URL) {
-        Some(bytes) => Some(GlobalStateHash::from_bytes(bytes)?),
+        Some(bytes) => bytes_to_hash(bytes)?,
         None => None,
     };
 
@@ -167,6 +167,17 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         min_funds_target,
         min_funds_target_end_date,
         raised,
+    })
+}
+
+
+fn bytes_to_hash(bytes: Vec<u8>) -> Result<Option<GlobalStateHash>> {
+    Ok(if bytes.is_empty() {
+        // we always get vectors as teal values (not optionals)
+        // we map empty vector to none here - this is meant to be used for values where it makes sense semantically
+        None
+    } else {
+        Some(GlobalStateHash::from_bytes(bytes)?)
     })
 }
 
