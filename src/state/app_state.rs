@@ -161,7 +161,7 @@ pub fn read_address_from_state(
 ) -> Result<Address> {
     let bytes = state
         .find_bytes(&key)
-        .ok_or(anyhow!("Unexpected: {key:?} address not in global state"))?;
+        .ok_or_else(|| anyhow!("Unexpected: {key:?} address not in global state"))?;
 
     Ok(Address(bytes.try_into().map_err(|e| {
         Error::msg(format!(

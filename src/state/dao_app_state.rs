@@ -158,7 +158,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         project_name,
         project_desc,
         share_price,
-        investors_share: investors_share,
+        investors_share,
         image_hash,
         social_media_url,
         owner,
@@ -169,7 +169,6 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         raised,
     })
 }
-
 
 fn bytes_to_hash(bytes: Vec<u8>) -> Result<Option<GlobalStateHash>> {
     Ok(if bytes.is_empty() {

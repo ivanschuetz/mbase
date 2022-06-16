@@ -40,50 +40,40 @@ impl PartialOrd<u64> for AssetAmount {
 
 impl CheckedAdd for AssetAmount {
     fn add(&self, v: &Self) -> Result<Self> {
-        Ok(AssetAmount(
-            self.0
-                .checked_add(v.0)
-                .ok_or(anyhow!("Failed: {self} + {v}".to_owned()))?,
-        ))
+        Ok(AssetAmount(self.0.checked_add(v.0).ok_or_else(|| {
+            anyhow!("Failed: {self} + {v}".to_owned())
+        })?))
     }
 }
 
 impl CheckedSub for AssetAmount {
     fn sub(&self, v: &Self) -> Result<Self> {
-        Ok(AssetAmount(
-            self.0
-                .checked_sub(v.0)
-                .ok_or(anyhow!("Failed: {self} - {v}".to_owned()))?,
-        ))
+        Ok(AssetAmount(self.0.checked_sub(v.0).ok_or_else(|| {
+            anyhow!("Failed: {self} - {v}".to_owned())
+        })?))
     }
 }
 
 impl CheckedMul for AssetAmount {
     fn mul(&self, v: &Self) -> Result<Self> {
-        Ok(AssetAmount(
-            self.0
-                .checked_mul(v.0)
-                .ok_or(anyhow!("Failed: {self} * {v}".to_owned()))?,
-        ))
+        Ok(AssetAmount(self.0.checked_mul(v.0).ok_or_else(|| {
+            anyhow!("Failed: {self} * {v}".to_owned())
+        })?))
     }
 }
 
 impl CheckedDiv for AssetAmount {
     fn div(&self, v: &Self) -> Result<Self> {
-        Ok(AssetAmount(
-            self.0
-                .checked_div(v.0)
-                .ok_or(anyhow!("Failed: {self} / {v}".to_owned()))?,
-        ))
+        Ok(AssetAmount(self.0.checked_div(v.0).ok_or_else(|| {
+            anyhow!("Failed: {self} / {v}".to_owned())
+        })?))
     }
 }
 
 impl CheckedMulOther<u64> for AssetAmount {
     fn mul(self, rhs: u64) -> Result<Self> {
-        Ok(AssetAmount(
-            self.0
-                .checked_mul(rhs)
-                .ok_or(anyhow!("Failed: {self} * {v}".to_owned()))?,
-        ))
+        Ok(AssetAmount(self.0.checked_mul(rhs).ok_or_else(|| {
+            anyhow!("Failed: {self} * {v}".to_owned())
+        })?))
     }
 }

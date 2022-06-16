@@ -44,7 +44,7 @@ impl SharesPercentage {
     /// u64 because that's what we use in most contexts
     pub fn to_u64(&self) -> Result<u64> {
         let multiplier = Self::conversion_integer_multiplier();
-        Ok((self.0 * multiplier).to_u64().ok_or(anyhow!("Invalid state: since we allow max {MAX_DECIMALS} digits, multiplying by {multiplier} should yield an integer"))?)
+        (self.0 * multiplier).to_u64().ok_or_else(|| anyhow!("Invalid state: since we allow max {MAX_DECIMALS} digits, multiplying by {multiplier} should yield an integer"))
     }
 
     fn conversion_integer_multiplier() -> Decimal {
@@ -57,9 +57,10 @@ impl TryFrom<u64> for SharesPercentage {
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
         let multiplier = Self::conversion_integer_multiplier();
-        let res = value.as_decimal().checked_div(multiplier).ok_or(anyhow!(
-            "Unexpected: division failed: {value} / {multiplier}"
-        ))?;
+        let res = value
+            .as_decimal()
+            .checked_div(multiplier)
+            .ok_or_else(|| anyhow!("Unexpected: division failed: {value} / {multiplier}"))?;
         Ok(SharesPercentage(res))
     }
 }

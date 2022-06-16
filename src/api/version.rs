@@ -44,7 +44,7 @@ pub fn versions_to_bytes(versions: Versions) -> Result<Vec<u8>> {
 }
 
 fn versions_to_bytes_array(versions: Versions) -> Result<[u8; 12]> {
-    Ok([
+    [
         to_bytes(versions.app_approval),
         to_bytes(versions.app_clear),
         to_bytes(versions.customer_escrow),
@@ -52,7 +52,7 @@ fn versions_to_bytes_array(versions: Versions) -> Result<[u8; 12]> {
     .concat()
     // this should always succeed, just being careful+
     .try_into()
-    .map_err(|_| Error::msg("Unexpected: couldn't convert version bytes to result array type"))?)
+    .map_err(|_| Error::msg("Unexpected: couldn't convert version bytes to result array type"))
 }
 
 fn to_version(array: [u8; 4]) -> Version {
