@@ -1,7 +1,6 @@
 use super::app_state::{
-    get_uint_value_or_error, global_state, local_state, local_state_from_account,
-    read_address_from_state, AppStateKey, ApplicationGlobalState, ApplicationLocalStateError,
-    ApplicationStateExt,
+    get_uint_value_or_error, local_state, local_state_from_account, read_address_from_state,
+    AppStateKey, ApplicationGlobalState, ApplicationLocalStateError, ApplicationStateExt,
 };
 use crate::{
     api::version::{bytes_to_versions, Version, VersionedAddress},
@@ -41,15 +40,6 @@ const GLOBAL_SOCIAL_MEDIA_URL: AppStateKey = AppStateKey("SocialMediaUrl");
 
 const GLOBAL_SHARES_LOCKED: AppStateKey = AppStateKey("LockedShares");
 
-// this doesn't seem needed, but needed to re-create Dao struct from state
-// TODO different structs for creation inputs and Dao?,
-// the number of shares initially reserved to investors seems useless other than when creating the dao,
-// and if it were to be needed it can be calculated with indexer (supply - xfer to app escrow when setting the dao up)
-const SHARES_FOR_INVESTORS: AppStateKey = AppStateKey("SharesForInvestors");
-
-// not sure this is needed
-const GLOBAL_OWNER: AppStateKey = AppStateKey("Owner");
-
 const GLOBAL_VERSIONS: AppStateKey = AppStateKey("Versions");
 
 const GLOBAL_TARGET: AppStateKey = AppStateKey("Target");
@@ -61,8 +51,8 @@ const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 const LOCAL_DAO: AppStateKey = AppStateKey("Dao");
 
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 7; // customer escrow, dao name, dao descr, logo, social media, owner, versions
-pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 10; // total received, shares asset id, funds asset id, share price, investors part, shares locked, shares for investors, funds target, funds target date, raised
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // customer escrow, dao name, dao descr, logo, social media, versions
+pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 9; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
 pub const LOCAL_SCHEMA_NUM_INTS: u64 = 4; // for investors: "shares", "claimed total", "claimed init", "dao"
@@ -84,11 +74,12 @@ pub struct CentralAppGlobalState {
     pub project_desc: Option<GlobalStateHash>,
     pub share_price: FundsAmount,
     pub investors_share: SharesPercentage,
-    pub shares_for_investors: ShareAmount,
 
     pub image_hash: Option<GlobalStateHash>,
     pub social_media_url: String,
 
+    // fetched from the application, not from state, but here for convenience,
+    // (the application is fetched when fetching state)
     pub owner: Address,
 
     pub locked_shares: ShareAmount,
@@ -100,7 +91,8 @@ pub struct CentralAppGlobalState {
 
 /// Returns Ok only if called after dao setup (branch_setup_dao), where all the global state is initialized.
 pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<CentralAppGlobalState> {
-    let gs = global_state(algod, app_id.0).await?;
+    let app = algod.application_information(app_id.0).await?;
+    let gs = ApplicationGlobalState(app.params.global_state);
 
     let expected_gs_len = GLOBAL_SCHEMA_NUM_BYTE_SLICES + GLOBAL_SCHEMA_NUM_INTS;
     if gs.len() != expected_gs_len as usize {
@@ -135,14 +127,10 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     let social_media_url = String::from_utf8(get_bytes_or_err(&GLOBAL_SOCIAL_MEDIA_URL, &gs)?)?;
 
-    let owner = read_address_from_state(&gs, GLOBAL_OWNER)?;
-
     let versions_bytes = get_bytes_or_err(&GLOBAL_VERSIONS, &gs)?;
     let versions = bytes_to_versions(&versions_bytes)?;
 
     let shares_locked = ShareAmount::new(get_int_or_err(&GLOBAL_SHARES_LOCKED, &gs)?);
-
-    let shares_for_investors = ShareAmount::new(get_int_or_err(&SHARES_FOR_INVESTORS, &gs)?);
 
     let min_funds_target = FundsAmount::new(get_int_or_err(&GLOBAL_TARGET, &gs)?);
     let min_funds_target_end_date = Timestamp(get_int_or_err(&GLOBAL_TARGET_END_DATE, &gs)?);
@@ -161,9 +149,8 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         investors_share,
         image_hash,
         social_media_url,
-        owner,
+        owner: app.params.creator,
         locked_shares: shares_locked,
-        shares_for_investors,
         min_funds_target,
         min_funds_target_end_date,
         raised,
