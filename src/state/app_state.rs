@@ -54,6 +54,13 @@ pub enum ApplicationLocalStateError<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppStateKey<'a>(pub &'a str);
 
+impl<'a> AppStateKey<'a> {
+    /// key as returned by sdk
+    pub fn to_teal_encoded_str(&self) -> String {
+        BASE64.encode(self.0.as_bytes())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// Just a wrapper equivalent to ApplicationLocalState (provided by the SDK), to offer a similar interface
 pub struct ApplicationGlobalState(pub Vec<TealKeyValue>);

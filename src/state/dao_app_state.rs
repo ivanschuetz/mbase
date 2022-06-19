@@ -6,7 +6,6 @@ use crate::{
     api::version::{bytes_to_versions, Version, VersionedAddress},
     models::{
         dao_app_id::DaoAppId,
-        dao_id::DaoId,
         funds::{FundsAmount, FundsAssetId},
         hash::GlobalStateHash,
         share_amount::ShareAmount,
@@ -21,7 +20,10 @@ use algonaut::{
 };
 use anyhow::{anyhow, Result};
 use data_encoding::{BASE64, HEXLOWER};
-use std::{collections::BTreeMap, convert::TryInto};
+use std::{
+    collections::{BTreeMap, HashMap},
+    convert::TryInto,
+};
 
 const GLOBAL_TOTAL_RECEIVED: AppStateKey = AppStateKey("CentralReceivedTotal");
 
@@ -49,13 +51,12 @@ const GLOBAL_RAISED: AppStateKey = AppStateKey("Raised");
 const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
-const LOCAL_DAO: AppStateKey = AppStateKey("Dao");
 
 pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // customer escrow, dao name, dao descr, logo, social media, versions
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 9; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
-pub const LOCAL_SCHEMA_NUM_INTS: u64 = 4; // for investors: "shares", "claimed total", "claimed init", "dao"
+pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed total", "claimed init"
 
 // TODO rename in DaoGlobalState
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -234,7 +235,6 @@ pub struct CentralAppInvestorState {
     /// to prevent double claiming (i.e. we allow to claim dividend only for future income).
     /// So we need to subtract this initial value from it, to show the investor what they actually claimed.
     pub claimed_init: FundsAmount,
-    pub dao_id: DaoId,
 }
 
 pub async fn dao_investor_state(
@@ -273,24 +273,44 @@ fn central_investor_state_from_local_state(
     let shares = get_uint_value_or_error(state, &LOCAL_SHARES)?;
     let claimed = FundsAmount::new(get_uint_value_or_error(state, &LOCAL_CLAIMED_TOTAL)?);
     let claimed_init = FundsAmount::new(get_uint_value_or_error(state, &LOCAL_CLAIMED_INIT)?);
-    let dao_id = DaoId(DaoAppId(get_uint_value_or_error(state, &LOCAL_DAO)?));
 
     Ok(CentralAppInvestorState {
         shares: ShareAmount::new(shares),
         claimed,
         claimed_init,
-        dao_id,
     })
 }
 
-/// Gets dao ids for all the capi apps where the user is opted in
-pub fn find_state_with_a_capi_dao_id(
-    app_local_state: &ApplicationLocalState,
-) -> Result<Option<DaoId>> {
-    let maybe_int_value = app_local_state.find_uint(&LOCAL_DAO);
-    match maybe_int_value {
-        Some(value) => Ok(Some(DaoId(DaoAppId(value)))),
-        // Not found is Ok: we just didn't find a matching key value
-        None => Ok(None),
+/// Determines whether local state belongs to a capi app
+///
+/// it's not 100% guaranteed that the app belongs to capi - we just check for the same schema and local variable names
+/// the likelihood that other app has this accidentally is small (we could name the keys a bit more specifically TODO)
+/// they could use the same schema intentionally - this has to be taken into account when using this function.
+/// Note also that the user would have to have opted in to one such app (they might be deceived into it)
+///
+/// TODO possible security issue?: think:
+/// e.g. some app could get the user to optin to the app externally somehow and imitate the schema such that it appears under the user's "my apps" in capi
+/// this can make the user open this app, thinking that it's trustable, and be more willing to invest? or something along those likes.
+/// alternative (if needed) unclear - previously we were storing the dao id in local state, but that can be imitated by other apps too.
+/// maybe it's enough to inform the user of these kind of risks with a short disclaimer
+pub fn matches_capi_local_state(app_local_state: &ApplicationLocalState) -> bool {
+    let schema = &app_local_state.schema;
+
+    if !(schema.num_byte_slice == LOCAL_SCHEMA_NUM_BYTE_SLICES
+        && schema.num_uint == LOCAL_SCHEMA_NUM_INTS
+        && app_local_state.len() == 3)
+    {
+        return false;
     }
+
+    let state_map: HashMap<String, TealValue> = app_local_state
+        .clone()
+        .key_value
+        .into_iter()
+        .map(|kv| (kv.key, kv.value))
+        .collect();
+
+    state_map.contains_key(&LOCAL_CLAIMED_TOTAL.to_teal_encoded_str())
+        && state_map.contains_key(&LOCAL_CLAIMED_INIT.to_teal_encoded_str())
+        && state_map.contains_key(&LOCAL_SHARES.to_teal_encoded_str())
 }
