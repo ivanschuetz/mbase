@@ -34,6 +34,11 @@ urlencoding = "2.0.0"
 reqwest = { version = "0.11.10", features = ["rustls-tls"], default-features = false }
 async-trait = "0.1.51"
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+log4rs = "1.0.0"
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-logger = "0.2"
+
 [target.'cfg(not(wasm))'.dev-dependencies]
 serial_test = "0.5.1"
 tokio = { version = "1.6.0", features = ["rt-multi-thread", "macros"] }

@@ -27,7 +27,17 @@ appenders:
 #     - file
 
 loggers:
+  mbase:
+    level: trace
+    appenders:
+      - console
+      # - file
   core:
+    level: trace
+    appenders:
+      - console
+      # - file
+  rocket:
     level: trace
     appenders:
       - console

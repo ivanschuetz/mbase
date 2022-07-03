@@ -97,7 +97,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     let expected_gs_len = GLOBAL_SCHEMA_NUM_BYTE_SLICES + GLOBAL_SCHEMA_NUM_INTS;
     if gs.len() != expected_gs_len as usize {
-        println!("DAO global state:");
+        log::debug!("DAO global state:");
         print_state(&gs.0)?;
         return Err(anyhow!(
             "Unexpected global state length: {}. Expected: {expected_gs_len}. Was the DAO setup performed already?",
@@ -177,7 +177,7 @@ fn print_state(values: &[TealKeyValue]) -> Result<()> {
 
     // separate step in case we split the fn
     for (k, v) in key_values {
-        println!("{k} => {v:?}")
+        log::debug!("{k} => {v:?}")
     }
 
     Ok(())
@@ -260,7 +260,7 @@ fn central_investor_state_from_local_state(
     state: &ApplicationLocalState,
 ) -> Result<CentralAppInvestorState, ApplicationLocalStateError<'static>> {
     if state.len() != ((LOCAL_SCHEMA_NUM_BYTE_SLICES + LOCAL_SCHEMA_NUM_INTS) as usize) {
-        println!("Investor local state:");
+        log::debug!("Investor local state:");
         print_state(&state.key_value).map_err(|e| {
             ApplicationLocalStateError::Msg(format!("Error printing local state: {e}"))
         })?;
