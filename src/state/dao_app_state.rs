@@ -8,6 +8,7 @@ use crate::{
         dao_app_id::DaoAppId,
         funds::{FundsAmount, FundsAssetId},
         hash::GlobalStateHash,
+        nft::Nft,
         share_amount::ShareAmount,
         shares_percentage::SharesPercentage,
         timestamp::Timestamp,
@@ -37,6 +38,7 @@ const GLOBAL_SHARE_PRICE: AppStateKey = AppStateKey("SharePrice");
 const GLOBAL_INVESTORS_SHARE: AppStateKey = AppStateKey("InvestorsPart");
 
 const GLOBAL_LOGO_URL: AppStateKey = AppStateKey("LogoUrl");
+const GLOBAL_LOGO_NFT: AppStateKey = AppStateKey("LogoNft");
 const GLOBAL_SOCIAL_MEDIA_URL: AppStateKey = AppStateKey("SocialMediaUrl");
 
 const GLOBAL_SHARES_LOCKED: AppStateKey = AppStateKey("LockedShares");
@@ -51,7 +53,7 @@ const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // customer escrow, dao name, dao descr, logo, social media, versions
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, logo, social media, versions, image nft
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 10; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
@@ -75,6 +77,7 @@ pub struct CentralAppGlobalState {
     pub investors_share: SharesPercentage,
 
     pub image_hash: Option<GlobalStateHash>,
+    pub image_nft: Option<Nft>,
     pub social_media_url: String,
 
     // fetched from the application, not from state, but here for convenience,
@@ -122,6 +125,10 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         Some(bytes) => bytes_to_hash(bytes)?,
         None => None,
     };
+    let image_nft = match gs.find_bytes(&GLOBAL_LOGO_NFT) {
+        Some(bytes) => rmp_serde::from_slice(&bytes)?,
+        None => None,
+    };
 
     let social_media_url = String::from_utf8(get_bytes_or_err(&GLOBAL_SOCIAL_MEDIA_URL, &gs)?)?;
 
@@ -146,6 +153,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         share_price,
         investors_share,
         image_hash,
+        image_nft,
         social_media_url,
         owner: app.params.creator,
         locked_shares: shares_locked,

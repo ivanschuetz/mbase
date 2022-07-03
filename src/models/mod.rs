@@ -6,3 +6,4 @@ pub mod hash;
 pub mod share_amount;
 pub mod shares_percentage;
 pub mod timestamp;
+pub mod nft;
