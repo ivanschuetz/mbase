@@ -91,7 +91,7 @@ pub fn algod_for_net(network: &Network) -> Algod {
     }
 }
 
-fn indexer_for_net(network: &Network) -> Indexer {
+pub fn indexer_for_net(network: &Network) -> Indexer {
     match network {
         Network::SandboxPrivate => sandbox_private_network_indexer(),
         Network::Private => {
