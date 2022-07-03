@@ -1,9 +1,9 @@
 use super::app_state::{
-    get_uint_value_or_error, local_state, local_state_from_account, read_address_from_state,
-    AppStateKey, ApplicationGlobalState, ApplicationLocalStateError, ApplicationStateExt,
+    get_uint_value_or_error, local_state, local_state_from_account, AppStateKey,
+    ApplicationGlobalState, ApplicationLocalStateError, ApplicationStateExt,
 };
 use crate::{
-    api::version::{bytes_to_versions, Version, VersionedAddress},
+    api::version::{bytes_to_versions, Version},
     models::{
         dao_app_id::DaoAppId,
         funds::{FundsAmount, FundsAssetId},
@@ -26,8 +26,7 @@ use std::{
 };
 
 const GLOBAL_TOTAL_RECEIVED: AppStateKey = AppStateKey("CentralReceivedTotal");
-
-const GLOBAL_CUSTOMER_ESCROW_ADDRESS: AppStateKey = AppStateKey("CustomerEscrowAddress");
+const GLOBAL_WITHDRAWABLE_AMOUNT: AppStateKey = AppStateKey("WithdrawableAmount");
 
 const GLOBAL_FUNDS_ASSET_ID: AppStateKey = AppStateKey("FundsAssetId");
 const GLOBAL_SHARES_ASSET_ID: AppStateKey = AppStateKey("SharesAssetId");
@@ -53,7 +52,7 @@ const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 
 pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // customer escrow, dao name, dao descr, logo, social media, versions
-pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 9; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised
+pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 10; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
 pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed total", "claimed init"
@@ -62,8 +61,7 @@ pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed t
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CentralAppGlobalState {
     pub received: FundsAmount,
-
-    pub customer_escrow: VersionedAddress,
+    pub withdrawable: FundsAmount,
 
     pub app_approval_version: Version,
     pub app_clear_version: Version,
@@ -106,8 +104,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     }
 
     let total_received = FundsAmount::new(get_int_or_err(&GLOBAL_TOTAL_RECEIVED, &gs)?);
-
-    let customer_escrow = read_address_from_state(&gs, GLOBAL_CUSTOMER_ESCROW_ADDRESS)?;
+    let withdrawable = FundsAmount::new(get_int_or_err(&GLOBAL_WITHDRAWABLE_AMOUNT, &gs)?);
 
     let funds_asset_id = FundsAssetId(get_int_or_err(&GLOBAL_FUNDS_ASSET_ID, &gs)?);
     let shares_asset_id = get_int_or_err(&GLOBAL_SHARES_ASSET_ID, &gs)?;
@@ -139,7 +136,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     Ok(CentralAppGlobalState {
         received: total_received,
-        customer_escrow: VersionedAddress::new(customer_escrow, versions.customer_escrow),
+        withdrawable,
         app_approval_version: versions.app_approval,
         app_clear_version: versions.app_clear,
         funds_asset_id,

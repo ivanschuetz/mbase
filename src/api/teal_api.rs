@@ -12,7 +12,6 @@ impl TealFileLoader {
         Versions {
             app_approval: Version(1),
             app_clear: Version(1),
-            customer_escrow: Version(1),
         }
     }
 
