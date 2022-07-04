@@ -38,7 +38,8 @@ const GLOBAL_SHARE_PRICE: AppStateKey = AppStateKey("SharePrice");
 const GLOBAL_INVESTORS_SHARE: AppStateKey = AppStateKey("InvestorsPart");
 
 const GLOBAL_LOGO_URL: AppStateKey = AppStateKey("LogoUrl");
-const GLOBAL_LOGO_NFT: AppStateKey = AppStateKey("LogoNft");
+const GLOBAL_IMAGE_URL: AppStateKey = AppStateKey("ImageUrl");
+const GLOBAL_IMAGE_ASSET_ID: AppStateKey = AppStateKey("ImageAsset");
 const GLOBAL_SOCIAL_MEDIA_URL: AppStateKey = AppStateKey("SocialMediaUrl");
 
 const GLOBAL_SHARES_LOCKED: AppStateKey = AppStateKey("LockedShares");
@@ -53,8 +54,8 @@ const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, logo, social media, versions, image nft
-pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 10; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, logo, social media, versions, image nft url
+pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 11; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
 pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed total", "claimed init"
@@ -125,9 +126,20 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         Some(bytes) => bytes_to_hash(bytes)?,
         None => None,
     };
-    let image_nft = match gs.find_bytes(&GLOBAL_LOGO_NFT) {
-        Some(bytes) => rmp_serde::from_slice(&bytes)?,
-        None => None,
+    let image_asset_id = gs.find_uint(&GLOBAL_IMAGE_ASSET_ID);
+    let image_url = gs.find_bytes(&GLOBAL_IMAGE_URL);
+
+    let image_nft = match (image_asset_id, image_url) {
+        (Some(asset_id), Some(url_bytes)) => Some(Nft {
+            asset_id,
+            url: String::from_utf8(url_bytes)?,
+        }),
+        (None, None) => None,
+        _ => {
+            return Err(anyhow!(
+                "Invalid state: nft asset id and url must both be set or not set".to_owned()
+            ))
+        }
     };
 
     let social_media_url = String::from_utf8(get_bytes_or_err(&GLOBAL_SOCIAL_MEDIA_URL, &gs)?)?;
