@@ -60,7 +60,8 @@ impl TryFrom<u64> for SharesPercentage {
         let res = value
             .as_decimal()
             .checked_div(multiplier)
-            .ok_or_else(|| anyhow!("Unexpected: division failed: {value} / {multiplier}"))?;
+            .ok_or_else(|| anyhow!("Unexpected: division failed: {value} / {multiplier}"))?
+            .normalize();
         Ok(SharesPercentage(res))
     }
 }
