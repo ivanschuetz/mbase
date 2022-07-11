@@ -1,5 +1,5 @@
-use anyhow::Result;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use anyhow::{anyhow, Result};
+use chrono::{DateTime, NaiveDateTime, Timelike, Utc};
 use std::convert::TryInto;
 
 use crate::models::timestamp::Timestamp;
@@ -16,10 +16,25 @@ pub fn timestamp_seconds_to_date(timestamp: u64) -> Result<DateTime<Utc>> {
 
 pub trait DateTimeExt {
     fn to_timestap(&self) -> Timestamp;
+
+    // sets the time component (hour/min/sec/nanosec) to 0
+    fn zero_time(&mut self) -> Result<DateTime<Utc>>;
 }
 
 impl DateTimeExt for DateTime<Utc> {
     fn to_timestap(&self) -> Timestamp {
         Timestamp(self.timestamp() as u64)
+    }
+
+    fn zero_time(&mut self) -> Result<DateTime<Utc>> {
+        Ok(self
+            .with_hour(0)
+            .ok_or_else(|| anyhow!("Couldn't reset hour"))?
+            .with_minute(0)
+            .ok_or_else(|| anyhow!("Couldn't reset min"))?
+            .with_second(0)
+            .ok_or_else(|| anyhow!("Couldn't reset sec"))?
+            .with_nanosecond(0)
+            .ok_or_else(|| anyhow!("Couldn't reset nanosec"))?)
     }
 }
