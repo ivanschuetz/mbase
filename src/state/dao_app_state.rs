@@ -54,8 +54,10 @@ const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 
+const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
+
 pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, logo, social media, versions, image nft url
-pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 11; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id
+pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 12; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id, setup date
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
 pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed total", "claimed init"
@@ -90,6 +92,8 @@ pub struct CentralAppGlobalState {
     pub min_funds_target: FundsAmount,
     pub min_funds_target_end_date: Timestamp,
     pub raised: FundsAmount,
+
+    pub setup_date: Timestamp,
 }
 
 /// Returns Ok only if called after dao setup (branch_setup_dao), where all the global state is initialized.
@@ -153,6 +157,8 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let min_funds_target_end_date = Timestamp(get_int_or_err(&GLOBAL_TARGET_END_DATE, &gs)?);
     let raised = FundsAmount::new(get_int_or_err(&GLOBAL_RAISED, &gs)?);
 
+    let setup_date = Timestamp(get_int_or_err(&GLOBAL_SETUP_DATE, &gs)?);
+
     Ok(CentralAppGlobalState {
         received: total_received,
         withdrawable,
@@ -172,6 +178,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         min_funds_target,
         min_funds_target_end_date,
         raised,
+        setup_date,
     })
 }
 
