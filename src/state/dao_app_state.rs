@@ -134,6 +134,8 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let image_url = gs.find_bytes(&GLOBAL_IMAGE_URL);
 
     let image_nft = match (image_asset_id, image_url) {
+        // default values - meaning we didn't set them (they were just initialized in teal)
+        (Some(asset_id), Some(url_bytes)) if asset_id == 0 && url_bytes.is_empty() => None,
         (Some(asset_id), Some(url_bytes)) => Some(Nft {
             asset_id,
             url: String::from_utf8(url_bytes)?,
