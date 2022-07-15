@@ -65,8 +65,19 @@ pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed t
 // TODO rename in DaoGlobalState
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CentralAppGlobalState {
+    /// Total funds the app has received from customer payments, since it was created
+    /// note that it doesn't include capi fees - these are deducated before the amount is added to this
     pub received: FundsAmount,
-    pub withdrawable: FundsAmount,
+
+    /// Funds on app escrow available to be used (i.e. withdrawn or claimed as dividend)
+    /// Funds that are not available are not-yet-drained funds. Nobody can do anything with them, aside of draining.
+    /// The reason this exists, is to be able to effectively perform actions upon receiving regular payments.
+    /// We can't directly do that, but we can make the funds unavailable and perform the actions as part of making them available.
+    /// The actions currently are:
+    /// - pay the capi fee (charged on customer payments)
+    /// - increment `received` state, which is used as basis to calculate dividend.
+    /// "Draining" is how we have called the flow (transaction group) that makes the funds available.
+    pub available: FundsAmount,
 
     pub app_approval_version: Version,
     pub app_clear_version: Version,
@@ -112,7 +123,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     }
 
     let total_received = FundsAmount::new(get_int_or_err(&GLOBAL_TOTAL_RECEIVED, &gs)?);
-    let withdrawable = FundsAmount::new(get_int_or_err(&GLOBAL_WITHDRAWABLE_AMOUNT, &gs)?);
+    let available = FundsAmount::new(get_int_or_err(&GLOBAL_WITHDRAWABLE_AMOUNT, &gs)?);
 
     let funds_asset_id = FundsAssetId(get_int_or_err(&GLOBAL_FUNDS_ASSET_ID, &gs)?);
     let shares_asset_id = get_int_or_err(&GLOBAL_SHARES_ASSET_ID, &gs)?;
@@ -169,7 +180,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     Ok(CentralAppGlobalState {
         received: total_received,
-        withdrawable,
+        available,
         app_approval_version: versions.app_approval,
         app_clear_version: versions.app_clear,
         funds_asset_id,
