@@ -27,7 +27,7 @@ use std::{
 };
 
 const GLOBAL_TOTAL_RECEIVED: AppStateKey = AppStateKey("CentralReceivedTotal");
-const GLOBAL_WITHDRAWABLE_AMOUNT: AppStateKey = AppStateKey("WithdrawableAmount");
+const GLOBAL_WITHDRAWABLE_AMOUNT: AppStateKey = AppStateKey("AvailableAmount");
 
 const GLOBAL_FUNDS_ASSET_ID: AppStateKey = AppStateKey("FundsAssetId");
 const GLOBAL_SHARES_ASSET_ID: AppStateKey = AppStateKey("SharesAssetId");
