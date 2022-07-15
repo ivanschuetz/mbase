@@ -75,7 +75,7 @@ pub struct CentralAppGlobalState {
     pub shares_asset_id: u64,
 
     pub project_name: String,
-    pub project_desc: Option<GlobalStateHash>,
+    pub project_desc_url: Option<String>,
     pub share_price: FundsAmount,
     pub investors_share: SharesPercentage,
 
@@ -118,8 +118,14 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let shares_asset_id = get_int_or_err(&GLOBAL_SHARES_ASSET_ID, &gs)?;
 
     let project_name = String::from_utf8(get_bytes_or_err(&GLOBAL_DAO_NAME, &gs)?)?;
-    let project_desc = match gs.find_bytes(&GLOBAL_DAO_DESC) {
-        Some(bytes) => bytes_to_hash(bytes)?,
+    let project_desc_url = match gs.find_bytes(&GLOBAL_DAO_DESC) {
+        Some(bytes) => {
+            if bytes.is_empty() {
+                None
+            } else {
+                Some(String::from_utf8(bytes)?)
+            }
+        }
         None => None,
     };
 
@@ -169,7 +175,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         funds_asset_id,
         shares_asset_id,
         project_name,
-        project_desc,
+        project_desc_url,
         share_price,
         investors_share,
         image_hash,
