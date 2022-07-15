@@ -7,7 +7,6 @@ use crate::{
     models::{
         dao_app_id::DaoAppId,
         funds::{FundsAmount, FundsAssetId},
-        hash::GlobalStateHash,
         nft::Nft,
         share_amount::ShareAmount,
         shares_percentage::SharesPercentage,
@@ -37,7 +36,6 @@ const GLOBAL_DAO_DESC: AppStateKey = AppStateKey("DaoDesc");
 const GLOBAL_SHARE_PRICE: AppStateKey = AppStateKey("SharePrice");
 const GLOBAL_INVESTORS_SHARE: AppStateKey = AppStateKey("InvestorsPart");
 
-const GLOBAL_LOGO_URL: AppStateKey = AppStateKey("LogoUrl");
 const GLOBAL_IMAGE_URL: AppStateKey = AppStateKey("ImageUrl");
 const GLOBAL_IMAGE_ASSET_ID: AppStateKey = AppStateKey("ImageAsset");
 const GLOBAL_SOCIAL_MEDIA_URL: AppStateKey = AppStateKey("SocialMediaUrl");
@@ -56,7 +54,7 @@ const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 
 const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
 
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, logo, social media, versions, image nft url
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 5; // dao name, dao descr, social media, versions, image nft url
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 12; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id, setup date
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
@@ -90,7 +88,6 @@ pub struct CentralAppGlobalState {
     pub share_price: FundsAmount,
     pub investors_share: SharesPercentage,
 
-    pub image_hash: Option<GlobalStateHash>,
     pub image_nft: Option<Nft>,
     pub social_media_url: String,
 
@@ -143,10 +140,6 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let share_price = FundsAmount::new(get_int_or_err(&GLOBAL_SHARE_PRICE, &gs)?);
     let investors_share = get_int_or_err(&GLOBAL_INVESTORS_SHARE, &gs)?.try_into()?;
 
-    let image_hash = match gs.find_bytes(&GLOBAL_LOGO_URL) {
-        Some(bytes) => bytes_to_hash(bytes)?,
-        None => None,
-    };
     let image_asset_id = gs.find_uint(&GLOBAL_IMAGE_ASSET_ID);
     let image_url = gs.find_bytes(&GLOBAL_IMAGE_URL);
 
@@ -189,7 +182,6 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         project_desc_url,
         share_price,
         investors_share,
-        image_hash,
         image_nft,
         social_media_url,
         owner: app.params.creator,
@@ -198,16 +190,6 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         min_funds_target_end_date,
         raised,
         setup_date,
-    })
-}
-
-fn bytes_to_hash(bytes: Vec<u8>) -> Result<Option<GlobalStateHash>> {
-    Ok(if bytes.is_empty() {
-        // we always get vectors as teal values (not optionals)
-        // we map empty vector to none here - this is meant to be used for values where it makes sense semantically
-        None
-    } else {
-        Some(GlobalStateHash::from_bytes(bytes)?)
     })
 }
 
