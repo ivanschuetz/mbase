@@ -6,3 +6,7 @@ pub mod nft;
 pub mod share_amount;
 pub mod shares_percentage;
 pub mod timestamp;
+pub mod capi_deps;
+pub mod tx_id;
+pub mod setup_dao_specs;
+pub mod create_shares_specs;
