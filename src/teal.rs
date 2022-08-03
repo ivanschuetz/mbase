@@ -46,6 +46,7 @@ fn in_teal_dir(subpath: &str) -> String {
 
 fn load_file_bytes(folder: &str, file_name: &str) -> Result<Vec<u8>> {
     let path = in_teal_dir(&format!("{folder}/{file_name}.teal"));
+    log::debug!("Will load file from path: {path}");
     Ok(fs::read(path)?)
 }
 
