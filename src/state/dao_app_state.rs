@@ -39,6 +39,7 @@ const GLOBAL_INVESTORS_SHARE: AppStateKey = AppStateKey("InvestorsPart");
 const GLOBAL_IMAGE_URL: AppStateKey = AppStateKey("ImageUrl");
 const GLOBAL_IMAGE_ASSET_ID: AppStateKey = AppStateKey("ImageAsset");
 const GLOBAL_SOCIAL_MEDIA_URL: AppStateKey = AppStateKey("SocialMediaUrl");
+const GLOBAL_PROSPECTUS_URL: AppStateKey = AppStateKey("ProspectusUrl");
 
 const GLOBAL_SHARES_LOCKED: AppStateKey = AppStateKey("LockedShares");
 
@@ -54,7 +55,7 @@ const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
 
 const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
 
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 5; // dao name, dao descr, social media, versions, image nft url
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, social media, versions, image nft url, prospectus url
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 12; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id, setup date
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
@@ -90,6 +91,8 @@ pub struct CentralAppGlobalState {
 
     pub image_nft: Option<Nft>,
     pub social_media_url: String,
+
+    pub prospectus_url: Option<String>,
 
     // fetched from the application, not from state, but here for convenience,
     // (the application is fetched when fetching state)
@@ -142,6 +145,16 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     let image_asset_id = gs.find_uint(&GLOBAL_IMAGE_ASSET_ID);
     let image_url = gs.find_bytes(&GLOBAL_IMAGE_URL);
+    let prospectus_url = match gs.find_bytes(&GLOBAL_PROSPECTUS_URL) {
+        Some(bytes) => {
+            if bytes.is_empty() {
+                None
+            } else {
+                Some(String::from_utf8(bytes)?)
+            }
+        }
+        None => None,
+    };
 
     let image_nft = match (image_asset_id, image_url) {
         // default values - meaning we didn't set them (they were just initialized in teal)
@@ -184,6 +197,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         investors_share,
         image_nft,
         social_media_url,
+        prospectus_url,
         owner: app.params.creator,
         locked_shares: shares_locked,
         min_funds_target,

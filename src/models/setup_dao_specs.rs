@@ -1,6 +1,6 @@
 use super::{
-    funds::FundsAmount, share_amount::ShareAmount, shares_percentage::SharesPercentage,
-    timestamp::Timestamp, create_shares_specs::CreateSharesSpecs,
+    create_shares_specs::CreateSharesSpecs, funds::FundsAmount, share_amount::ShareAmount,
+    shares_percentage::SharesPercentage, timestamp::Timestamp,
 };
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
@@ -23,6 +23,8 @@ pub struct SetupDaoSpecs {
     // which would e.g. break equality comparisons between these specs and the ones loaded from global state
     pub raise_end_date: Timestamp,
     pub raise_min_target: FundsAmount,
+
+    pub prospectus_url: Option<String>,
 }
 
 impl SetupDaoSpecs {
@@ -38,6 +40,7 @@ impl SetupDaoSpecs {
         shares_for_investors: ShareAmount,
         raise_min_target: FundsAmount,
         raise_end_date: Timestamp,
+        prospectus_url: Option<String>,
     ) -> Result<SetupDaoSpecs> {
         if shares_for_investors > shares.supply {
             return Err(anyhow!(
@@ -73,6 +76,7 @@ impl SetupDaoSpecs {
             shares_for_investors,
             raise_min_target,
             raise_end_date,
+            prospectus_url,
         })
     }
 
