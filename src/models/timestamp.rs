@@ -20,4 +20,8 @@ impl Timestamp {
         let naive = NaiveDateTime::from_timestamp(timestamp_i64, 0);
         Ok(DateTime::from_utc(naive, Utc))
     }
+
+    pub fn now() -> Timestamp {
+        Utc::now().into()
+    }
 }

@@ -20,6 +20,7 @@ use algonaut::{
 };
 use anyhow::{anyhow, Result};
 use data_encoding::{BASE64, HEXLOWER};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, HashMap},
     convert::TryInto,
@@ -52,13 +53,16 @@ const GLOBAL_RAISED: AppStateKey = AppStateKey("Raised");
 const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
+const LOCAL_SIGNED_PROSPECTUS_URL: AppStateKey = AppStateKey("SignedProspectusUrl");
+const LOCAL_SIGNED_PROSPECTUS_HASH: AppStateKey = AppStateKey("SignedProspectusHash");
+const LOCAL_SIGNED_PROSPECTUS_TIMESTAMP: AppStateKey = AppStateKey("SignedProspectusTimestamp");
 
 const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
 
 pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, social media, versions, image nft url, prospectus url
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 12; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id, setup date
 
-pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 0;
+pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 3; // signed prospectus url, signed prospectus hash, signed prospectus timestamp
 pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed total", "claimed init"
 
 // TODO rename in DaoGlobalState
@@ -263,6 +267,7 @@ fn get_bytes_or_err(key: &AppStateKey, gs: &ApplicationGlobalState) -> Result<Ve
         )
     })
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CentralAppInvestorState {
     // Locked (by definition since it's in the app state - free shares are just assets in the wallet) shares
@@ -274,6 +279,14 @@ pub struct CentralAppInvestorState {
     /// to prevent double claiming (i.e. we allow to claim dividend only for future income).
     /// So we need to subtract this initial value from it, to show the investor what they actually claimed.
     pub claimed_init: FundsAmount,
+    pub signed_prospectus: Option<SignedProspectus>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SignedProspectus {
+    pub hash: String,
+    pub url: String,
+    pub timestamp: Timestamp,
 }
 
 pub async fn dao_investor_state(
@@ -313,10 +326,34 @@ fn central_investor_state_from_local_state(
     let claimed = FundsAmount::new(get_uint_value_or_error(state, &LOCAL_CLAIMED_TOTAL)?);
     let claimed_init = FundsAmount::new(get_uint_value_or_error(state, &LOCAL_CLAIMED_INIT)?);
 
+    let signed_prospectus_url = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_URL);
+    let signed_prospectus_hash = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_HASH);
+    let signed_prospectus_timestamp = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_TIMESTAMP);
+
+    let signed_prospectus: Option<SignedProspectus> = match (
+        &signed_prospectus_url,
+        &signed_prospectus_hash,
+        &signed_prospectus_timestamp,
+    ) {
+        (Some(url), Some(hash), Some(timestamp)) => Some(SignedProspectus {
+            hash: String::from_utf8(hash.clone())?,
+            url: String::from_utf8(url.clone())?,
+            timestamp: Timestamp(u64::from_be_bytes(
+                timestamp
+                    .clone()
+                    .try_into()
+                    .map_err(|e: Vec<u8>| ApplicationLocalStateError::Msg(format!("{:?}", e)))?,
+            )),
+        }),
+        (None, None, None) => None,
+        _ => return Err(ApplicationLocalStateError::Msg(format!("Invalid state in teal: incomplete prospectus {signed_prospectus_url:?}, {signed_prospectus_hash:?}, {signed_prospectus_timestamp:?}"))),
+    };
+
     Ok(CentralAppInvestorState {
         shares: ShareAmount::new(shares),
         claimed,
         claimed_init,
+        signed_prospectus,
     })
 }
 

@@ -1,7 +1,6 @@
 use algonaut::{
     algod::v2::Algod,
     core::Address,
-    error::ServiceError,
     model::algod::v2::{Account, ApplicationLocalState, TealKeyValue, TealValue},
 };
 use anyhow::{anyhow, Error, Result};
@@ -132,9 +131,12 @@ impl Display for ApplicationLocalStateError<'static> {
     }
 }
 
-impl From<ServiceError> for ApplicationLocalStateError<'static> {
-    fn from(err: ServiceError) -> Self {
-        ApplicationLocalStateError::Msg(err.to_string())
+impl<E> From<E> for ApplicationLocalStateError<'static>
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    fn from(error: E) -> Self {
+        ApplicationLocalStateError::Msg(error.to_string())
     }
 }
 
