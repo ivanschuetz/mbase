@@ -354,6 +354,9 @@ fn central_investor_state_from_local_state(
     let signed_prospectus_hash = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_HASH);
     let signed_prospectus_timestamp = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_TIMESTAMP);
 
+    // Note that whether None is expected or not depends on the use case:
+    // currently investing requires acking the prospectus (in teal), so it should always be set
+    // while for locking acking the prospectus is unlikely to make sense, so it's not set (unless the user also invested / invests later)
     let signed_prospectus: Option<SignedProspectus> = match (
         &signed_prospectus_url,
         &signed_prospectus_hash,
