@@ -1,3 +1,5 @@
+use crate::state::dao_app_state::Prospectus;
+
 use super::{
     create_shares_specs::CreateSharesSpecs, funds::FundsAmount, share_amount::ShareAmount,
     shares_percentage::SharesPercentage, timestamp::Timestamp,
@@ -24,7 +26,7 @@ pub struct SetupDaoSpecs {
     pub raise_end_date: Timestamp,
     pub raise_min_target: FundsAmount,
 
-    pub prospectus_url: Option<String>,
+    pub prospectus: Option<Prospectus>,
 }
 
 impl SetupDaoSpecs {
@@ -40,7 +42,7 @@ impl SetupDaoSpecs {
         shares_for_investors: ShareAmount,
         raise_min_target: FundsAmount,
         raise_end_date: Timestamp,
-        prospectus_url: Option<String>,
+        prospectus: Option<Prospectus>,
     ) -> Result<SetupDaoSpecs> {
         if shares_for_investors > shares.supply {
             return Err(anyhow!(
@@ -76,7 +78,7 @@ impl SetupDaoSpecs {
             shares_for_investors,
             raise_min_target,
             raise_end_date,
-            prospectus_url,
+            prospectus,
         })
     }
 

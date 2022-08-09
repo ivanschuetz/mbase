@@ -41,6 +41,7 @@ const GLOBAL_IMAGE_URL: AppStateKey = AppStateKey("ImageUrl");
 const GLOBAL_IMAGE_ASSET_ID: AppStateKey = AppStateKey("ImageAsset");
 const GLOBAL_SOCIAL_MEDIA_URL: AppStateKey = AppStateKey("SocialMediaUrl");
 const GLOBAL_PROSPECTUS_URL: AppStateKey = AppStateKey("ProspectusUrl");
+const GLOBAL_PROSPECTUS_HASH: AppStateKey = AppStateKey("ProspectusHash");
 
 const GLOBAL_SHARES_LOCKED: AppStateKey = AppStateKey("LockedShares");
 
@@ -59,7 +60,7 @@ const LOCAL_SIGNED_PROSPECTUS_TIMESTAMP: AppStateKey = AppStateKey("SignedProspe
 
 const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
 
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 6; // dao name, dao descr, social media, versions, image nft url, prospectus url
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 7; // dao name, dao descr, social media, versions, image nft url, prospectus url, prospectus hash
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 12; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id, setup date
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 3; // signed prospectus url, signed prospectus hash, signed prospectus timestamp
@@ -96,7 +97,7 @@ pub struct CentralAppGlobalState {
     pub image_nft: Option<Nft>,
     pub social_media_url: String,
 
-    pub prospectus_url: Option<String>,
+    pub prospectus: Option<Prospectus>,
 
     // fetched from the application, not from state, but here for convenience,
     // (the application is fetched when fetching state)
@@ -149,17 +150,6 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     let image_asset_id = gs.find_uint(&GLOBAL_IMAGE_ASSET_ID);
     let image_url = gs.find_bytes(&GLOBAL_IMAGE_URL);
-    let prospectus_url = match gs.find_bytes(&GLOBAL_PROSPECTUS_URL) {
-        Some(bytes) => {
-            if bytes.is_empty() {
-                None
-            } else {
-                Some(String::from_utf8(bytes)?)
-            }
-        }
-        None => None,
-    };
-
     let image_nft = match (image_asset_id, image_url) {
         // default values - meaning we didn't set them (they were just initialized in teal)
         (Some(asset_id), Some(url_bytes)) if asset_id == 0 && url_bytes.is_empty() => None,
@@ -171,6 +161,18 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         _ => {
             return Err(anyhow!(
                 "Invalid state: nft asset id and url must both be set or not set".to_owned()
+            ))
+        }
+    };
+
+    let prospectus_url = read_string_none_if_empty(&gs, &GLOBAL_PROSPECTUS_URL)?;
+    let prospectus_hash = read_string_none_if_empty(&gs, &GLOBAL_PROSPECTUS_HASH)?;
+    let prospectus = match (prospectus_url, prospectus_hash) {
+        (Some(url), Some(hash)) => Some(Prospectus { hash, url }),
+        (None, None) => None,
+        _ => {
+            return Err(anyhow!(
+                "Invalid state: prospectus hash and url must both be set or not set".to_owned()
             ))
         }
     };
@@ -201,13 +203,29 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         investors_share,
         image_nft,
         social_media_url,
-        prospectus_url,
+        prospectus,
         owner: app.params.creator,
         locked_shares: shares_locked,
         min_funds_target,
         min_funds_target_end_date,
         raised,
         setup_date,
+    })
+}
+
+fn read_string_none_if_empty(
+    gs: &ApplicationGlobalState,
+    key: &AppStateKey,
+) -> Result<Option<String>> {
+    Ok(match gs.find_bytes(key) {
+        Some(bytes) => {
+            if bytes.is_empty() {
+                None
+            } else {
+                Some(String::from_utf8(bytes)?)
+            }
+        }
+        None => None,
     })
 }
 
@@ -280,6 +298,12 @@ pub struct CentralAppInvestorState {
     /// So we need to subtract this initial value from it, to show the investor what they actually claimed.
     pub claimed_init: FundsAmount,
     pub signed_prospectus: Option<SignedProspectus>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Prospectus {
+    pub hash: String,
+    pub url: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
