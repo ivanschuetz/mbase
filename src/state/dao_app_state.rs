@@ -398,7 +398,8 @@ pub fn matches_capi_local_state(app_local_state: &ApplicationLocalState) -> bool
 
     if !(schema.num_byte_slice == LOCAL_SCHEMA_NUM_BYTE_SLICES
         && schema.num_uint == LOCAL_SCHEMA_NUM_INTS
-        && app_local_state.len() == 3)
+        // we always initialize all state, by convention
+        && app_local_state.len() == (LOCAL_SCHEMA_NUM_BYTE_SLICES + LOCAL_SCHEMA_NUM_INTS) as usize)
     {
         return false;
     }
