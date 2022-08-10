@@ -19,6 +19,7 @@ where
 {
     let mut file = OpenOptions::new()
         .write(true)
+        .truncate(true)
         .create(true)
         .open(path)
         .unwrap();
