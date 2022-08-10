@@ -213,20 +213,31 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     })
 }
 
-fn read_string_none_if_empty(
-    gs: &ApplicationGlobalState,
-    key: &AppStateKey,
-) -> Result<Option<String>> {
-    Ok(match gs.find_bytes(key) {
+fn read_string_none_if_empty<T>(gs: &T, key: &AppStateKey) -> Result<Option<String>>
+where
+    T: ApplicationStateExt,
+{
+    Ok(match read_bytes_none_if_empty(gs, key) {
+        // guaranteed to not be empty here
+        Some(bytes) => Some(String::from_utf8(bytes)?),
+        None => None,
+    })
+}
+
+fn read_bytes_none_if_empty<T>(gs: &T, key: &AppStateKey) -> Option<Vec<u8>>
+where
+    T: ApplicationStateExt,
+{
+    match gs.find_bytes(key) {
         Some(bytes) => {
             if bytes.is_empty() {
                 None
             } else {
-                Some(String::from_utf8(bytes)?)
+                Some(bytes)
             }
         }
         None => None,
-    })
+    }
 }
 
 fn print_state(values: &[TealKeyValue]) -> Result<()> {
@@ -350,9 +361,10 @@ fn central_investor_state_from_local_state(
     let claimed = FundsAmount::new(get_uint_value_or_error(state, &LOCAL_CLAIMED_TOTAL)?);
     let claimed_init = FundsAmount::new(get_uint_value_or_error(state, &LOCAL_CLAIMED_INIT)?);
 
-    let signed_prospectus_url = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_URL);
-    let signed_prospectus_hash = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_HASH);
-    let signed_prospectus_timestamp = state.find_bytes(&LOCAL_SIGNED_PROSPECTUS_TIMESTAMP);
+    let signed_prospectus_url = read_string_none_if_empty(state, &LOCAL_SIGNED_PROSPECTUS_URL)?;
+    let signed_prospectus_hash = read_string_none_if_empty(state, &LOCAL_SIGNED_PROSPECTUS_HASH)?;
+    let signed_prospectus_timestamp =
+        read_bytes_none_if_empty(state, &LOCAL_SIGNED_PROSPECTUS_TIMESTAMP);
 
     // Note that whether None is expected or not depends on the use case:
     // currently investing requires acking the prospectus (in teal), so it should always be set
@@ -363,13 +375,13 @@ fn central_investor_state_from_local_state(
         &signed_prospectus_timestamp,
     ) {
         (Some(url), Some(hash), Some(timestamp)) => Some(SignedProspectus {
-            hash: String::from_utf8(hash.clone())?,
-            url: String::from_utf8(url.clone())?,
+            hash: hash.to_owned(),
+            url: url.to_owned(),
             timestamp: Timestamp(u64::from_be_bytes(
                 timestamp
                     .clone()
                     .try_into()
-                    .map_err(|e: Vec<u8>| ApplicationLocalStateError::Msg(format!("{:?}", e)))?,
+                    .map_err(|e: Vec<u8>| ApplicationLocalStateError::Msg(format!("Couldn't convert vec: {:?} to timestamp. Error: {:?}", timestamp, e)))?,
             )),
         }),
         (None, None, None) => None,
