@@ -27,6 +27,9 @@ pub struct SetupDaoSpecs {
     pub raise_min_target: FundsAmount,
 
     pub prospectus: Option<Prospectus>,
+
+    pub min_invest_amount: ShareAmount,
+    pub max_invest_amount: ShareAmount,
 }
 
 impl SetupDaoSpecs {
@@ -43,6 +46,8 @@ impl SetupDaoSpecs {
         raise_min_target: FundsAmount,
         raise_end_date: Timestamp,
         prospectus: Option<Prospectus>,
+        min_invest_amount: ShareAmount,
+        max_invest_amount: ShareAmount,
     ) -> Result<SetupDaoSpecs> {
         if shares_for_investors > shares.supply {
             return Err(anyhow!(
@@ -79,6 +84,8 @@ impl SetupDaoSpecs {
             raise_min_target,
             raise_end_date,
             prospectus,
+            min_invest_amount,
+            max_invest_amount,
         })
     }
 

@@ -51,6 +51,9 @@ const GLOBAL_TARGET: AppStateKey = AppStateKey("Target");
 const GLOBAL_TARGET_END_DATE: AppStateKey = AppStateKey("TargetEndDate");
 const GLOBAL_RAISED: AppStateKey = AppStateKey("Raised");
 
+const GLOBAL_MIN_INVEST_AMOUNT: AppStateKey = AppStateKey("GlobalMinInvestAmount");
+const GLOBAL_MAX_INVEST_AMOUNT: AppStateKey = AppStateKey("GlobalMaxInvestAmount");
+
 const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
@@ -60,8 +63,11 @@ const LOCAL_SIGNED_PROSPECTUS_TIMESTAMP: AppStateKey = AppStateKey("SignedProspe
 
 const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
 
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 7; // dao name, dao descr, social media, versions, image nft url, prospectus url, prospectus hash
-pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 12; // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date, raised, image nft asset id, setup date
+// dao name, dao descr, social media, versions, image nft url, prospectus url, prospectus hash
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 7;
+// total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date,
+// raised, image nft asset id, setup date, min invest shares, max invest shares
+pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 14;
 
 pub const LOCAL_SCHEMA_NUM_BYTE_SLICES: u64 = 3; // signed prospectus url, signed prospectus hash, signed prospectus timestamp
 pub const LOCAL_SCHEMA_NUM_INTS: u64 = 3; // for investors: "shares", "claimed total", "claimed init"
@@ -110,6 +116,9 @@ pub struct CentralAppGlobalState {
     pub raised: FundsAmount,
 
     pub setup_date: Timestamp,
+
+    pub min_invest_amount: ShareAmount,
+    pub max_invest_amount: ShareAmount,
 }
 
 /// Returns Ok only if called after dao setup (branch_setup_dao), where all the global state is initialized.
@@ -190,6 +199,9 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
 
     let setup_date = Timestamp(get_int_or_err(&GLOBAL_SETUP_DATE, &gs)?);
 
+    let min_invest_amount = ShareAmount::new(get_int_or_err(&GLOBAL_MIN_INVEST_AMOUNT, &gs)?);
+    let max_invest_amount = ShareAmount::new(get_int_or_err(&GLOBAL_MAX_INVEST_AMOUNT, &gs)?);
+
     Ok(CentralAppGlobalState {
         received: total_received,
         available,
@@ -210,6 +222,8 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         min_funds_target_end_date,
         raised,
         setup_date,
+        min_invest_amount,
+        max_invest_amount,
     })
 }
 
