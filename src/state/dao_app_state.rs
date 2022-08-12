@@ -7,6 +7,7 @@ use crate::{
     models::{
         dao_app_id::DaoAppId,
         funds::{FundsAmount, FundsAssetId},
+        hashable::hash,
         nft::Nft,
         share_amount::ShareAmount,
         shares_percentage::SharesPercentage,
@@ -329,6 +330,15 @@ pub struct CentralAppInvestorState {
 pub struct Prospectus {
     pub hash: String,
     pub url: String,
+}
+
+impl Prospectus {
+    pub fn new(bytes: &[u8], url: String) -> Prospectus {
+        Prospectus {
+            hash: BASE64.encode(&hash(&bytes).0),
+            url,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

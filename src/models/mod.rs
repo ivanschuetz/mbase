@@ -10,3 +10,4 @@ pub mod capi_deps;
 pub mod tx_id;
 pub mod setup_dao_specs;
 pub mod create_shares_specs;
+pub mod hashable;
