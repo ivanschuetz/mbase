@@ -41,6 +41,7 @@ const GLOBAL_INVESTORS_SHARE: AppStateKey = AppStateKey("InvestorsPart");
 const GLOBAL_IMAGE_URL: AppStateKey = AppStateKey("ImageUrl");
 const GLOBAL_IMAGE_ASSET_ID: AppStateKey = AppStateKey("ImageAsset");
 const GLOBAL_SOCIAL_MEDIA_URL: AppStateKey = AppStateKey("SocialMediaUrl");
+const GLOBAL_HOMEPAGE_URL: AppStateKey = AppStateKey("HomepageUrl");
 const GLOBAL_PROSPECTUS_URL: AppStateKey = AppStateKey("ProspectusUrl");
 const GLOBAL_PROSPECTUS_HASH: AppStateKey = AppStateKey("ProspectusHash");
 
@@ -64,8 +65,8 @@ const LOCAL_SIGNED_PROSPECTUS_TIMESTAMP: AppStateKey = AppStateKey("SignedProspe
 
 const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
 
-// dao name, dao descr, social media, versions, image nft url, prospectus url, prospectus hash
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 7;
+// dao name, dao descr, social media, versions, image nft url, prospectus url, prospectus hash, homepage
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 8;
 // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date,
 // raised, image nft asset id, setup date, min invest shares, max invest shares
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 14;
@@ -103,6 +104,7 @@ pub struct CentralAppGlobalState {
 
     pub image_nft: Option<Nft>,
     pub social_media_url: String,
+    pub homepage_url: String,
 
     pub prospectus: Option<Prospectus>,
 
@@ -188,6 +190,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     };
 
     let social_media_url = String::from_utf8(get_bytes_or_err(&GLOBAL_SOCIAL_MEDIA_URL, &gs)?)?;
+    let homepage_url = String::from_utf8(get_bytes_or_err(&GLOBAL_HOMEPAGE_URL, &gs)?)?;
 
     let versions_bytes = get_bytes_or_err(&GLOBAL_VERSIONS, &gs)?;
     let versions = bytes_to_versions(&versions_bytes)?;
@@ -216,6 +219,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         investors_share,
         image_nft,
         social_media_url,
+        homepage_url,
         prospectus,
         owner: app.params.creator,
         locked_shares: shares_locked,
