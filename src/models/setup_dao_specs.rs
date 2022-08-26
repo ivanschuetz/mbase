@@ -12,18 +12,13 @@ pub struct SetupDaoSpecs {
     pub name: String,
     pub descr_url: Option<String>,
     pub shares: CreateSharesSpecs,
-
-    /// % of the dao's income reserved to investors
     pub investors_share: SharesPercentage,
-
     pub share_price: FundsAmount,
     pub image_url: Option<String>,
-    pub social_media_url: String,
-    pub homepage_url: String,
-
-    // shares to be sold to investors (sent to the app - the rest stay on the creator's account)
+    pub social_media_url: String, // this can be later in an extension (possibly with more links)
+    // shares to be sold to investors (the rest stay in the creator's account)
+    // note this is entirely different from investors_share, which is the % of the project's income channeled to investors
     shares_for_investors: ShareAmount,
-
     // we manage this as timestamp instead of date,
     // to ensure correctness when storing the timestamp in TEAL / compare to current TEAL timestamp (which is in seconds)
     // DateTime can have millis and nanoseconds too,
@@ -47,7 +42,6 @@ impl SetupDaoSpecs {
         share_price: FundsAmount,
         image_url: Option<String>,
         social_media_url: String,
-        homepage_url: String,
         shares_for_investors: ShareAmount,
         raise_min_target: FundsAmount,
         raise_end_date: Timestamp,
@@ -85,7 +79,6 @@ impl SetupDaoSpecs {
             investors_share,
             share_price,
             image_url,
-            homepage_url,
             social_media_url,
             shares_for_investors,
             raise_min_target,
