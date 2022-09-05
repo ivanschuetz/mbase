@@ -55,6 +55,8 @@ const GLOBAL_RAISED: AppStateKey = AppStateKey("Raised");
 const GLOBAL_MIN_INVEST_AMOUNT: AppStateKey = AppStateKey("GlobalMinInvestAmount");
 const GLOBAL_MAX_INVEST_AMOUNT: AppStateKey = AppStateKey("GlobalMaxInvestAmount");
 
+const GLOBAL_TEAM_URL: AppStateKey = AppStateKey("TeamUrl");
+
 const LOCAL_CLAIMED_TOTAL: AppStateKey = AppStateKey("ClaimedTotal");
 const LOCAL_CLAIMED_INIT: AppStateKey = AppStateKey("ClaimedInit");
 const LOCAL_SHARES: AppStateKey = AppStateKey("Shares");
@@ -64,8 +66,8 @@ const LOCAL_SIGNED_PROSPECTUS_TIMESTAMP: AppStateKey = AppStateKey("SignedProspe
 
 const GLOBAL_SETUP_DATE: AppStateKey = AppStateKey("SetupDate");
 
-// dao name, dao descr, social media, versions, image nft url, prospectus url, prospectus hash
-pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 7;
+// dao name, dao descr, social media, versions, image nft url, prospectus url, prospectus hash, team url
+pub const GLOBAL_SCHEMA_NUM_BYTE_SLICES: u64 = 8;
 // total received, shares asset id, funds asset id, share price, investors part, shares locked, funds target, funds target date,
 // raised, image nft asset id, setup date, min invest shares, max invest shares
 pub const GLOBAL_SCHEMA_NUM_INTS: u64 = 14;
@@ -120,6 +122,8 @@ pub struct CentralAppGlobalState {
 
     pub min_invest_amount: ShareAmount,
     pub max_invest_amount: ShareAmount,
+
+    pub team_url: Option<String>,
 }
 
 /// Returns Ok only if called after dao setup (branch_setup_dao), where all the global state is initialized.
@@ -144,16 +148,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let shares_asset_id = get_int_or_err(&GLOBAL_SHARES_ASSET_ID, &gs)?;
 
     let project_name = String::from_utf8(get_bytes_or_err(&GLOBAL_DAO_NAME, &gs)?)?;
-    let project_desc_url = match gs.find_bytes(&GLOBAL_DAO_DESC) {
-        Some(bytes) => {
-            if bytes.is_empty() {
-                None
-            } else {
-                Some(String::from_utf8(bytes)?)
-            }
-        }
-        None => None,
-    };
+    let project_desc_url = read_string_none_if_empty(&gs, &GLOBAL_DAO_DESC)?;
 
     let share_price = FundsAmount::new(get_int_or_err(&GLOBAL_SHARE_PRICE, &gs)?);
     let investors_share = get_int_or_err(&GLOBAL_INVESTORS_SHARE, &gs)?.try_into()?;
@@ -203,6 +198,8 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
     let min_invest_amount = ShareAmount::new(get_int_or_err(&GLOBAL_MIN_INVEST_AMOUNT, &gs)?);
     let max_invest_amount = ShareAmount::new(get_int_or_err(&GLOBAL_MAX_INVEST_AMOUNT, &gs)?);
 
+    let team_url = read_string_none_if_empty(&gs, &GLOBAL_TEAM_URL)?;
+
     Ok(CentralAppGlobalState {
         received: total_received,
         available,
@@ -225,6 +222,7 @@ pub async fn dao_global_state(algod: &Algod, app_id: DaoAppId) -> Result<Central
         setup_date,
         min_invest_amount,
         max_invest_amount,
+        team_url,
     })
 }
 
