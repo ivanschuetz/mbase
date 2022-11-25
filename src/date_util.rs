@@ -27,14 +27,13 @@ impl DateTimeExt for DateTime<Utc> {
     }
 
     fn zero_time(&mut self) -> Result<DateTime<Utc>> {
-        Ok(self
-            .with_hour(0)
+        self.with_hour(0)
             .ok_or_else(|| anyhow!("Couldn't reset hour"))?
             .with_minute(0)
             .ok_or_else(|| anyhow!("Couldn't reset min"))?
             .with_second(0)
             .ok_or_else(|| anyhow!("Couldn't reset sec"))?
             .with_nanosecond(0)
-            .ok_or_else(|| anyhow!("Couldn't reset nanosec"))?)
+            .ok_or_else(|| anyhow!("Couldn't reset nanosec"))
     }
 }

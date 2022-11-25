@@ -279,12 +279,10 @@ fn value_to_str(value: &TealValue) -> Result<String> {
             // if not address, display as hex
             .unwrap_or_else(|_| to_hex_str(&value.bytes.clone()))),
         2 => Ok(value.uint.to_string()),
-        _ => {
-            return Err(anyhow!(
-                "Unexpected global value type: {}",
-                value.value_type
-            ))
-        }
+        _ => Err(anyhow!(
+            "Unexpected global value type: {}",
+            value.value_type
+        )),
     }
 }
 
@@ -333,7 +331,7 @@ pub struct Prospectus {
 impl Prospectus {
     pub fn new(bytes: &[u8], url: String) -> Prospectus {
         Prospectus {
-            hash: BASE64.encode(&hash(&bytes).0),
+            hash: BASE64.encode(&hash(bytes).0),
             url,
         }
     }
